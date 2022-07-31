@@ -1,0 +1,17 @@
+[package]
+name="actix-handlebars-sqlx-boilerplate"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# https://stackoverflow.com/a/69942705/10503012
+actix-web = { version = "^4" }
+sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "postgres" ] }
+handlebars = { version = "^4", features = ["dir_source"] }
+rand = "^0.8"
+serde_json = "^1.0"
+dotenv = "0.15.0"
+mime = "0.3.16"
+serde = { version = "1.0.117", features = ["derive"] }
