@@ -1,5 +1,5 @@
 [package]
-name="actix-handlebars-sqlx-boilerplate"
+name="actix-handlebars-sqlx"
 version = "0.1.0"
 edition = "2021"
 
