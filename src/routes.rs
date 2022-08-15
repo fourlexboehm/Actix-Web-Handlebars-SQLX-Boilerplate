@@ -40,21 +40,16 @@ async fn user_from_form(form: web::Form<Info>,  pool: web::Data<Pool<Postgres>>)
         &form.name
     )
 		.fetch_one(&**pool)
-		.await
-		.unwrap();
+		.await;
 
-	// to_string_pretty(&created_user).unwrap()
-
-	HttpResponse::SeeOther()
-		.append_header((LOCATION, "/"))
-		.body("")
-	//
-	// HttpResponse::Ok()
-	// 	.append_header(header::ContentType(APPLICATION_JSON))
-	// 	.body(json)
-	// format!("Welcome {}!", form.name)
+	match created_user {
+		Err(_) => HttpResponse::BadRequest().body("Error creating user, username was taken"),
+		Ok(_) => HttpResponse::SeeOther()
+			.append_header((LOCATION, "/"))
+			.body(""),
+	}
 }
-//
+
 // #[post("/users")]
 // async fn create_user(user: web::Json<ApiUser>, pool: web::Data<Pool<Postgres>>) -> impl Responder {
 // 	let created_user = sqlx::query_as!(
@@ -90,29 +85,10 @@ async fn put_user(user: web::Json<DbUser>, pool: web::Data<Pool<Postgres>>) -> i
 		.unwrap();
 	let json = to_string_pretty(&edited_user).unwrap();
 
-	// HttpResponse::SeeOther()
-	// 	.append_header((LOCATION, "/"))
-	// 	.body("")
-		// .append_header(header::ContentType(APPLICATION_JSON))
-		// .body(json)
 	HttpResponse::Ok()
 		.append_header(header::ContentType(APPLICATION_JSON))
 		.body(json)
-	//send response to redirect to index page
 }
-
-// #[derive(Template)]
-// #[template(path = "user.html")]
-// struct UserTemplate<'a> {
-//     name: &'a str,
-//     text: &'a str,
-// }
-
-// #[derive(Template)]
-// #[template(path = "index.html")]
-// struct Index<'a> {
-//     users: vec![UserTemp
-// }
 
 #[get("/")]
 async fn index(pool: web::Data<Pool<Postgres>>) -> HttpResponse {
