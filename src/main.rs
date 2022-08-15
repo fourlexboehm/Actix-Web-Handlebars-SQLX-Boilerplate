@@ -10,6 +10,7 @@ mod page;
 #[derive(Deserialize)]
 struct Info {
     name: String,
+    delete: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
