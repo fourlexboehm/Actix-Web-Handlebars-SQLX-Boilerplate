@@ -1,14 +1,19 @@
 use actix_web::{web, App, HttpServer};
 use dotenv::dotenv;
-use handlebars::Handlebars;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
 use sqlx::{Pool, Postgres};
 
-
 mod routes;
+mod page;
+
+#[derive(Deserialize)]
+struct Info {
+    name: String,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
+// #[template(path = "user.html")]
 pub struct DbUser {
     pub id: i32,
     pub name: String,
@@ -53,21 +58,22 @@ async fn main() -> std::io::Result<()> {
     // shared between the application threads, and is therefore passed to the
     // Application Builder as an atomic reference-counted pointer.
 
-    let mut handlebars = Handlebars::new();
-    handlebars
-        .register_templates_directory(".html", "./templates")
-        .unwrap();
-    let handlebars_ref = web::Data::new(handlebars);
+    // let mut handlebars = Handlebars::new();
+    // handlebars
+    //     .register_templates_directory(".html", "./templates")
+    //     .unwrap();
+    // let handlebars_ref = web::Data::new(handlebars);
 
     HttpServer::new(move || {
         App::new()
             .app_data(data.clone())
-            .app_data(handlebars_ref.clone())
             .service(routes::index)
             .service(routes::all_users)
             .service(routes::user_by_id)
-            .service(routes::create_user)
+            // .service(routes::create_user)
+            .service(routes::user_from_form)
             .service(routes::put_user)
+        // web::post().to(index)
     })
     .bind("127.0.0.1:8080")?
     .run()

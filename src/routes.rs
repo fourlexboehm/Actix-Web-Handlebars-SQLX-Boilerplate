@@ -1,56 +1,82 @@
-use crate::ApiUser;
+use crate::{ApiUser, Info, page};
 use crate::DbUser;
-use actix_web::{get, http::*, post, put, web, HttpResponse, Responder};
-use handlebars::Handlebars;
+use actix_web::{get, http::*, post, put, web, HttpResponse, Responder, Result as AwResult};
+use actix_web::http::header::{LanguageTag, LOCATION};
+use maud::*;
 use mime::APPLICATION_JSON;
+use serde_json::to_string_pretty;
 use sqlx::{Pool, Postgres};
-use std::collections::BTreeMap;
 
 #[get("/users")]
 async fn all_users(pool: web::Data<Pool<Postgres>>) -> impl Responder {
-    let users = sqlx::query_as!(DbUser, "SELECT id, name FROM users")
-        .fetch_all(&**pool)
-        .await
-        .unwrap();
-    let json = serde_json::to_string_pretty(&users).unwrap();
+	let users = sqlx::query_as!(DbUser, "SELECT id, name FROM users")
+		.fetch_all(&**pool)
+		.await
+		.unwrap();
+	let json = to_string_pretty(&users).unwrap();
 
-    HttpResponse::Ok()
-        .append_header(header::ContentType(APPLICATION_JSON))
-        .body(json)
+	HttpResponse::Ok()
+		.append_header(header::ContentType(APPLICATION_JSON))
+		.body(json)
 }
 
 #[get("/users/{id}")]
 async fn user_by_id(id: web::Path<u32>, pool: web::Data<Pool<Postgres>>) -> impl Responder {
-    let user = DbUser::find_by_id(*id as i32, &pool).await.unwrap();
-    let json = serde_json::to_string_pretty(&user).unwrap();
+	let user = DbUser::find_by_id(*id as i32, &pool).await.unwrap();
+	let json = to_string_pretty(&user).unwrap();
 
-    HttpResponse::Ok()
-        .append_header(header::ContentType(APPLICATION_JSON))
-        .body(json)
+	HttpResponse::Ok()
+		.append_header(header::ContentType(APPLICATION_JSON))
+		.body(json)
 }
 
 #[post("/users")]
-async fn create_user(user: web::Json<ApiUser>, pool: web::Data<Pool<Postgres>>) -> impl Responder {
-    let created_user = sqlx::query_as!(
+async fn user_from_form(form: web::Form<Info>,  pool: web::Data<Pool<Postgres>>) -> impl Responder {
+	let created_user = sqlx::query_as!(
         DbUser,
         "INSERT INTO users (name)
         VALUES ($1)
         RETURNING id, name",
-        &user.name
+        &form.name
     )
-    .fetch_one(&**pool)
-    .await
-    .unwrap();
-    let json = serde_json::to_string_pretty(&created_user).unwrap();
+		.fetch_one(&**pool)
+		.await
+		.unwrap();
 
-    HttpResponse::Ok()
-        .append_header(header::ContentType(APPLICATION_JSON))
-        .body(json)
+	// to_string_pretty(&created_user).unwrap()
+
+	HttpResponse::SeeOther()
+		.append_header((LOCATION, "/"))
+		.body("")
+	//
+	// HttpResponse::Ok()
+	// 	.append_header(header::ContentType(APPLICATION_JSON))
+	// 	.body(json)
+	// format!("Welcome {}!", form.name)
 }
+//
+// #[post("/users")]
+// async fn create_user(user: web::Json<ApiUser>, pool: web::Data<Pool<Postgres>>) -> impl Responder {
+// 	let created_user = sqlx::query_as!(
+//         DbUser,
+//         "INSERT INTO users (name)
+//         VALUES ($1)
+//         RETURNING id, name",
+//         &user.name
+//     )
+// 		.fetch_one(&**pool)
+// 		.await
+// 		.unwrap();
+// 	let json = serde_json::to_string_pretty(&created_user).unwrap();
+//
+// 	HttpResponse::Ok()
+// 		.append_header(header::ContentType(APPLICATION_JSON))
+// 		.body(json)
+// }
 
 #[put("/users")]
 async fn put_user(user: web::Json<DbUser>, pool: web::Data<Pool<Postgres>>) -> impl Responder {
-    let edited_user = sqlx::query_as!(
+	let edited_user = sqlx::query_as!(
         DbUser,
         "UPDATE users
         SET name = $1
@@ -59,60 +85,72 @@ async fn put_user(user: web::Json<DbUser>, pool: web::Data<Pool<Postgres>>) -> i
         &user.name,
         &user.id
     )
-    .fetch_one(&**pool)
-    .await
-    .unwrap();
-    let json = serde_json::to_string_pretty(&edited_user).unwrap();
+		.fetch_one(&**pool)
+		.await
+		.unwrap();
+	let json = to_string_pretty(&edited_user).unwrap();
 
-    HttpResponse::Ok()
-        .append_header(header::ContentType(APPLICATION_JSON))
-        .body(json)
+	// HttpResponse::SeeOther()
+	// 	.append_header((LOCATION, "/"))
+	// 	.body("")
+		// .append_header(header::ContentType(APPLICATION_JSON))
+		// .body(json)
+	HttpResponse::Ok()
+		.append_header(header::ContentType(APPLICATION_JSON))
+		.body(json)
+	//send response to redirect to index page
 }
 
+// #[derive(Template)]
+// #[template(path = "user.html")]
+// struct UserTemplate<'a> {
+//     name: &'a str,
+//     text: &'a str,
+// }
+
+// #[derive(Template)]
+// #[template(path = "index.html")]
+// struct Index<'a> {
+//     users: vec![UserTemp
+// }
+
 #[get("/")]
-async fn index(hb: web::Data<Handlebars<'_>>, pool: web::Data<Pool<Postgres>>) -> HttpResponse {
-    let users = sqlx::query_as!(DbUser, "SELECT id, name FROM users")
-        .fetch_all(&**pool)
-        .await
-        .unwrap();
-    let mut d = BTreeMap::new();
+async fn index(pool: web::Data<Pool<Postgres>>) -> HttpResponse {
+	let users = sqlx::query_as!(DbUser, "SELECT id, name FROM users")
+		.fetch_all(&**pool)
+		.await
+		.unwrap();
+	let content = html! {
+		#content {
+			div class="container mt-5" {
+				div class="row" {
 
-    d.insert("col1".to_string(), users);
-    // d.insert(
-    //     "colour".to_string(),
-    //     if rand::random() {
-    //         "bg-danger".to_string()
-    //     } else {
-    //         "bg-primary".to_string()
-    //     },
-    // );
+					div class="col-sm-4" {
+						@for user in &users {
+							li  {(user.name)}
+						}
+					}
 
-    // d.insert(
-    //     "col2".to_string(),
-    //     if rand::random() {
-    //         "alex".to_string()
-    //     } else {
-    //         "cook".to_string()
-    //     },
-    // );
+					div class="col-sm-4" {
+						form action="/users" method="post" {
+							div {
+								label { "What's your name? " }
+								input type="text" name="name" value="" {}
+							}
+							input type="submit" value="Submit" {}
+							// button { "Submit" }
+						}
+					}
 
-    // d.insert(
-    //     "col2".to_string(),
-    //     if rand::random() {
-    //         "alex".to_string()
-    //     } else {
-    //         "cook".to_string()
-    //     },
-    // );
-    // d.insert(
-    //     "col3".to_string(),
-    //     if rand::random() {
-    //         "are you absolutely foreal".to_string()
-    //     } else {
-    //         "no i'm not for real ho".to_string()
-    //     },
-    // );
-    let body = hb.render("index", &d).unwrap();
-
-    HttpResponse::Ok().body(body)
+					div class="col-sm-4" {
+						p  {"hi"}
+					}
+				}
+			}
+		}
+	};
+	// Ok(
+	//     page::page("localhost", "alexical day", "a true homepage", "en", content)
+	// )
+	HttpResponse::Ok().content_type("text/html").body(page::page("localhost", "alexical day", "a true homepage", "en", content).into_string())
 }
