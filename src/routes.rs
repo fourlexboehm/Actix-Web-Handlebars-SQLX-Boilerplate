@@ -7,28 +7,28 @@ use mime::APPLICATION_JSON;
 use serde_json::to_string_pretty;
 use sqlx::{Pool, Postgres};
 
-#[get("/users")]
-async fn all_users(pool: web::Data<Pool<Postgres>>) -> impl Responder {
-    let users = sqlx::query_as!(DbUser, "SELECT id, name FROM users")
-        .fetch_all(&**pool)
-        .await
-        .unwrap();
-    let json = to_string_pretty(&users).unwrap();
+// #[get("/users")]
+// async fn all_users(pool: web::Data<Pool<Postgres>>) -> impl Responder {
+//     let users = sqlx::query_as!(DbUser, "SELECT id, name FROM users")
+//         .fetch_all(&**pool)
+//         .await
+//         .unwrap();
+//     let json = to_string_pretty(&users).unwrap();
 
-    HttpResponse::Ok()
-        .append_header(header::ContentType(APPLICATION_JSON))
-        .body(json)
-}
+//     HttpResponse::Ok()
+//         .append_header(header::ContentType(APPLICATION_JSON))
+//         .body(json)
+// }
 
-#[get("/users/{id}")]
-async fn user_by_id(id: web::Path<u32>, pool: web::Data<Pool<Postgres>>) -> impl Responder {
-    let user = DbUser::find_by_id(*id as i32, &pool).await.unwrap();
-    let json = to_string_pretty(&user).unwrap();
+// #[get("/users/{id}")]
+// async fn user_by_id(id: web::Path<u32>, pool: web::Data<Pool<Postgres>>) -> impl Responder {
+//     let user = DbUser::find_by_id(*id as i32, &pool).await.unwrap();
+//     let json = to_string_pretty(&user).unwrap();
 
-    HttpResponse::Ok()
-        .append_header(header::ContentType(APPLICATION_JSON))
-        .body(json)
-}
+//     HttpResponse::Ok()
+//         .append_header(header::ContentType(APPLICATION_JSON))
+//         .body(json)
+// }
 
 #[post("/users")]
 async fn user_from_form(form: web::Form<Info>, pool: web::Data<Pool<Postgres>>) -> impl Responder {
@@ -77,26 +77,26 @@ async fn user_from_form(form: web::Form<Info>, pool: web::Data<Pool<Postgres>>) 
 // 		.body(json)
 // }
 
-#[put("/users")]
-async fn put_user(user: web::Json<DbUser>, pool: web::Data<Pool<Postgres>>) -> impl Responder {
-    let edited_user = sqlx::query_as!(
-        DbUser,
-        "UPDATE users
-        SET name = $1
-        WHERE id = $2
-        RETURNING id, name",
-        &user.name,
-        &user.id
-    )
-    .fetch_one(&**pool)
-    .await
-    .unwrap();
-    let json = to_string_pretty(&edited_user).unwrap();
+// #[put("/users")]
+// async fn put_user(user: web::Json<DbUser>, pool: web::Data<Pool<Postgres>>) -> impl Responder {
+//     let edited_user = sqlx::query_as!(
+//         DbUser,
+//         "UPDATE users
+//         SET name = $1
+//         WHERE id = $2
+//         RETURNING id, name",
+//         &user.name,
+//         &user.id
+//     )
+//     .fetch_one(&**pool)
+//     .await
+//     .unwrap();
+//     let json = to_string_pretty(&edited_user).unwrap();
 
-    HttpResponse::Ok()
-        .append_header(header::ContentType(APPLICATION_JSON))
-        .body(json)
-}
+//     HttpResponse::Ok()
+//         .append_header(header::ContentType(APPLICATION_JSON))
+//         .body(json)
+// }
 
 #[get("/")]
 async fn index(pool: web::Data<Pool<Postgres>>) -> HttpResponse {

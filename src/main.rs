@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
 use sqlx::{Pool, Postgres};
 
-mod routes;
 mod page;
+mod routes;
 
 #[derive(Deserialize)]
 struct Info {
@@ -58,11 +58,11 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(data.clone())
             .service(routes::index)
-            .service(routes::all_users)
-            .service(routes::user_by_id)
+            // .service(routes::all_users)
+            // .service(routes::user_by_id)
             // .service(routes::create_user)
             .service(routes::user_from_form)
-            .service(routes::put_user)
+        // .service(routes::put_user)
         // web::post().to(index)
     })
     .bind("127.0.0.1:8080")?
